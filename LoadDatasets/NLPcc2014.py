@@ -69,30 +69,30 @@ def read_npz(fileName):
 train_data = read_npz("train")
 test_data = read_npz("test")
 
-all_context = np.vstack((train_data["contextList"], test_data["contextList"]))
-scaler = MinMaxScaler(feature_range=[0,10])
-all_context = scaler.fit_transform(all_context)
-
-train_context = all_context[:len(train_data["contextList"])]
-test_context = all_context[len(train_data["contextList"]):]
-train_labels = train_data["labelList"]
-test_labels = test_data["labelList"]
+# all_context = np.vstack((train_data["contextList"], test_data["contextList"]))
+# scaler = MinMaxScaler(feature_range=[0,10])
+# all_context = scaler.fit_transform(all_context)
+#
+# train_context = all_context[:len(train_data["contextList"])]
+# test_context = all_context[len(train_data["contextList"]):]
+# train_labels = train_data["labelList"]
+# test_labels = test_data["labelList"]
 
 
 class NLPccDataset(Dataset):
-    def __init__(self, contextList, labelList):
-        self.contextList = torch.from_numpy(contextList).float()
-        self.labelList = torch.from_numpy(labelList).float()
+    def __init__(self, data):
+        self.contextList = torch.from_numpy(data["contextList"]).long()
+        self.labelList = torch.from_numpy(data["labelList"]).long()
 
     def __len__(self):
         return len(self.labelList)
 
     def __getitem__(self, index):
-        return self.contextList(index), self.labelList(index)
+        return self.contextList[index], self.labelList[index]
 
 
-train_dataset = NLPccDataset(train_context, train_labels)
-test_dataset = NLPccDataset(test_context, test_labels)
+train_dataset = NLPccDataset(train_data)
+test_dataset = NLPccDataset(test_data)
 
 
 def get_iter(batch_size):

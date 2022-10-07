@@ -61,15 +61,15 @@ train_context, test_context,  train_labels, test_labels = train_test_split(all_c
 
 class HotelDataset(Dataset):
     def __init__(self, contextList, labelList):
-        self.contextList = torch.from_numpy(contextList).float()
-        self.labelList = torch.from_numpy(labelList).float()
+        self.contextList = torch.from_numpy(contextList).long()
+        self.labelList = torch.from_numpy(labelList).long()
         print(self.contextList)
 
     def __len__(self):
         return len(self.labelList)
 
     def __getitem__(self, index):
-        return self.contextList(index), self.labelList(index)
+        return self.contextList[index], self.labelList[index]
 
 
 train_dataset = HotelDataset(train_context, train_labels)

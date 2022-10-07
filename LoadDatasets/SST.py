@@ -49,21 +49,21 @@ train_data = read_npz("train")
 test_data = read_npz("test")
 val_data = read_npz("val")
 
-all_context = np.vstack((train_data["contextList"], test_data["contextList"], val_data["contextList"]))
-scaler = MinMaxScaler(feature_range=[0,10])
-all_context = scaler.fit_transform(all_context)
-
-train_context = all_context[:len(train_data["contextList"])]
-train_labels = train_data["labelList"]
-test_context = all_context[len(train_data["contextList"]):len(train_data["contextList"])+len(test_data["contextList"])]
-test_labels = test_data["labelList"]
-val_context = all_context[len(train_data["contextList"])+len(test_data["contextList"]):]
-val_labels = val_data["labelList"]
+# all_context = np.vstack((train_data["contextList"], test_data["contextList"], val_data["contextList"]))
+# scaler = MinMaxScaler(feature_range=[0,10])
+# all_context = scaler.fit_transform(all_context)
+#
+# train_context = all_context[:len(train_data["contextList"])]
+# train_labels = train_data["labelList"]
+# test_context = all_context[len(train_data["contextList"]):len(train_data["contextList"])+len(test_data["contextList"])]
+# test_labels = test_data["labelList"]
+# val_context = all_context[len(train_data["contextList"])+len(test_data["contextList"]):]
+# val_labels = val_data["labelList"]
 
 class SSTDataset(Dataset):
-    def __init__(self, contextList, labelList):
-        self.contextList = torch.from_numpy(contextList).float()
-        self.labelList = torch.from_numpy(labelList).float()
+    def __init__(self, data):
+        self.contextList = torch.from_numpy(data["contextList"]).long()
+        self.labelList = torch.from_numpy(data["labelList"]).long()
 
     def __len__(self):
         return len(self.labelList)
@@ -72,9 +72,9 @@ class SSTDataset(Dataset):
         return self.contextList[index], self.labelList[index]
 
 
-train_dataset = SSTDataset(train_context, train_labels)
-test_dataset = SSTDataset(test_context, test_labels)
-val_dataset = SSTDataset(val_context, val_labels)
+train_dataset = SSTDataset(train_data)
+test_dataset = SSTDataset(test_data)
+val_dataset = SSTDataset(val_data)
 
 
 def get_iter(batch_size):
