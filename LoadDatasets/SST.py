@@ -11,6 +11,7 @@ bert_vocab = "F:\Dataset\Bert-uncased\\vocab.txt"
 tokenizer = BertTokenizer.from_pretrained(bert_vocab)
 max_len = 100
 
+
 def to_npz(fileName):
     txt_file = root_path + fileName + ".csv"
     npz_file = root_path + fileName + ".npz"
@@ -20,18 +21,20 @@ def to_npz(fileName):
     outputs = list(data["OUTPUT"])
 
     contextList = []
+    max_id = 0
     for text in inputs:
         token = tokenizer.tokenize(text)
         ids = tokenizer.convert_tokens_to_ids(token)
+        max_id = max(max_id, max(ids))
         contextList.append(ids)
 
     for i in range(len(contextList)):
         contextList[i] += [0] * (max_len - len(contextList[i]))
-        contextList[i] = np.asarray(contextList[i])
 
     contextList = np.asarray(contextList)
     outputs = np.asarray(outputs)
-    np.savez(npz_file, contextList=contextList, labelList=outputs, max_len=max_len)
+    max_id = np.asarray(max_id)
+    np.savez(npz_file, contextList=contextList, labelList=outputs, max_id=max_id)
 
 
 def read_npz(fileName):
@@ -45,9 +48,7 @@ def read_npz(fileName):
 # to_npz("train")
 # to_npz("test")
 # to_npz("val")
-train_data = read_npz("train")
-test_data = read_npz("test")
-val_data = read_npz("val")
+
 
 # all_context = np.vstack((train_data["contextList"], test_data["contextList"], val_data["contextList"]))
 # scaler = MinMaxScaler(feature_range=[0,10])
@@ -72,14 +73,17 @@ class SSTDataset(Dataset):
         return self.contextList[index], self.labelList[index]
 
 
-train_dataset = SSTDataset(train_data)
-test_dataset = SSTDataset(test_data)
-val_dataset = SSTDataset(val_data)
+def get_data_info(batch_size):
+    train_data = read_npz("train")
+    test_data = read_npz("test")
+    val_data = read_npz("val")
 
+    train_dataset = SSTDataset(train_data)
+    test_dataset = SSTDataset(test_data)
+    val_dataset = SSTDataset(val_data)
 
-def get_iter(batch_size):
     train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     test_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     val_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
-    return train_iter, test_iter, val_iter
+    return train_iter, test_iter, val_iter, int(max(train_data["max_id"], test_data["max_id"], val_data["max_id"]))

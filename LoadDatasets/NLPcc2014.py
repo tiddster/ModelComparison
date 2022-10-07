@@ -25,6 +25,7 @@ def to_npz(fileName):
 
     labelList = []
     contexts = []
+    max_id = 0
     if fileName == "train":
         for i in range(len(lines)):
             if "review" in lines[i]:
@@ -47,6 +48,7 @@ def to_npz(fileName):
     for context in contexts:
         tokens = tokenizers.tokenize(context)
         ids = tokenizers.convert_tokens_to_ids(tokens)
+        max_id = max(max_id, max(ids))
         contextList.append(ids)
 
     for i in range(len(contextList)):
@@ -55,7 +57,8 @@ def to_npz(fileName):
 
     contextList = np.asarray(contextList)
     labelList = np.asarray(labelList)
-    np.savez(save_file, contextList=contextList, labelList=labelList)
+    max_id = np.asarray(max_id)
+    np.savez(save_file, contextList=contextList, labelList=labelList, max_id=max_id)
 
 def read_npz(fileName):
     np.load.__defaults__ = (None, True, True, 'ASCII')
@@ -99,3 +102,7 @@ def get_iter(batch_size):
     train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     return train_iter, test_iter
+
+
+def vocab_size():
+    return int(max(train_data["max_id"], test_data["max_id"]))
