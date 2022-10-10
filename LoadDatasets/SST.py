@@ -5,8 +5,12 @@ from transformers import BertTokenizer
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 
+"""
+BiLSTM + Attention   5分类：35%
+"""
+
 root_path = "F:\Dataset\SST\\"
-bert_vocab = "F:\Dataset\Bert-uncased\\vocab.txt"
+bert_vocab = "F:\Dataset\Bert-uncased"
 
 tokenizer = BertTokenizer.from_pretrained(bert_vocab)
 max_len = 100
@@ -20,6 +24,15 @@ def to_npz(fileName):
     inputs = list(data["INPUT"])
     outputs = list(data["OUTPUT"])
 
+    labelList = []
+    for l in outputs:
+        if 1 <= l < 3:
+            labelList.append(0)
+        elif l == 3:
+            labelList.append(1)
+        else:
+            labelList.append(2)
+
     contextList = []
     max_id = 0
     for text in inputs:
@@ -32,9 +45,9 @@ def to_npz(fileName):
         contextList[i] += [0] * (max_len - len(contextList[i]))
 
     contextList = np.asarray(contextList)
-    outputs = np.asarray(outputs)
+    labelList = np.asarray(labelList)
     max_id = np.asarray(max_id)
-    np.savez(npz_file, contextList=contextList, labelList=outputs, max_id=max_id)
+    np.savez(npz_file, contextList=contextList, labelList=labelList, max_id=max_id)
 
 
 def read_npz(fileName):
@@ -43,11 +56,6 @@ def read_npz(fileName):
     np.load.__defaults__ = (None, False, True, 'ASCII')
     print(datas.files)
     return datas
-
-
-# to_npz("train")
-# to_npz("test")
-# to_npz("val")
 
 
 # all_context = np.vstack((train_data["contextList"], test_data["contextList"], val_data["contextList"]))
@@ -87,3 +95,8 @@ def get_data_info(batch_size):
     val_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 
     return train_iter, test_iter, val_iter, int(max(train_data["max_id"], test_data["max_id"], val_data["max_id"]))
+
+
+# to_npz("train")
+# to_npz("test")
+# to_npz("val")

@@ -5,9 +5,9 @@ class Config():
     def __init__(self, vocab_size, n_class):
         self.vocab_size = vocab_size
         self.n_class = n_class
-        self.embedding_dim = 50
-        self.hidden_size = 50
-        self.lr = 0.001
+        self.embedding_dim = 300
+        self.hidden_size = 300
+        self.lr = 0.01
         self.dropout = 0.01
 
         self.device = torch.device('cpu')

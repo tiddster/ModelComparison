@@ -5,6 +5,10 @@ from sklearn.preprocessing import MinMaxScaler
 from transformers import BertTokenizer
 from torch.utils.data import Dataset, DataLoader
 
+"""
+Hotel数据集： 50 epoch on CUDA
+"""
+
 root_path = "F:\Dataset\HotalBySongbo\\"
 bert_vocab = "F:\Dataset\Bert-base-Chinese"
 

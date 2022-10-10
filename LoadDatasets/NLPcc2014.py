@@ -4,6 +4,11 @@ from transformers import BertTokenizer
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 
+
+"""
+BiLSTM+Attention   500 epoch on CUDA  
+"""
+
 root_path = "F:\Dataset\\NLPCC2014_sentiment-master\\dataset\\"
 bert_path = "F:\Dataset\Bert-base-Chinese"
 
@@ -47,9 +52,10 @@ def to_npz(fileName):
     contextList = []
     for context in contexts:
         tokens = tokenizers.tokenize(context)
-        ids = tokenizers.convert_tokens_to_ids(tokens)
-        max_id = max(max_id, max(ids))
-        contextList.append(ids)
+        if len(tokens) != 0:
+            ids = tokenizers.convert_tokens_to_ids(tokens)
+            max_id = max(max_id, max(ids))
+            contextList.append(ids)
 
     for i in range(len(contextList)):
         contextList[i] += [0] * (max_len - len(contextList[i]))
@@ -69,8 +75,6 @@ def read_npz(fileName):
 
 # to_npz("train")
 # to_npz("test")
-train_data = read_npz("train")
-test_data = read_npz("test")
 
 # all_context = np.vstack((train_data["contextList"], test_data["contextList"]))
 # scaler = MinMaxScaler(feature_range=[0,10])
@@ -94,15 +98,13 @@ class NLPccDataset(Dataset):
         return self.contextList[index], self.labelList[index]
 
 
-train_dataset = NLPccDataset(train_data)
-test_dataset = NLPccDataset(test_data)
+def get_data_info(batch_size):
+    train_data = read_npz("train")
+    test_data = read_npz("test")
 
+    train_dataset = NLPccDataset(train_data)
+    test_dataset = NLPccDataset(test_data)
 
-def get_iter(batch_size):
     train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
-    return train_iter, test_iter
-
-
-def vocab_size():
-    return int(max(train_data["max_id"], test_data["max_id"]))
+    return train_iter, test_iter, int(max(train_data["max_id"], test_data["max_id"]))
