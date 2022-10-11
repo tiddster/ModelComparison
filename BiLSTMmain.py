@@ -2,7 +2,7 @@ import time
 
 import torch
 
-import LoadDatasets.SST as sst
+import LoadDatasets.SST as SST
 from Models.ConfigUtils import Config
 from Models.BiLSTM import BiLSTM
 
@@ -44,9 +44,9 @@ def train(net, train_iter, test_iter):
 
 
 if __name__ == '__main__':
-    print(torch.cuda.device_count())
+    print(torch.cuda.get_device_name())
 
-    train_iter, test_iter, _, vocab_size = sst.get_data_info(32)
+    train_iter, test_iter, vocab_size = SST.get_data_info(128)
 
     print(f"进行数据集设置, 词向量大小为：{vocab_size}")
     config = Config(vocab_size, 3)

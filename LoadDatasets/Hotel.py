@@ -9,10 +9,10 @@ from torch.utils.data import Dataset, DataLoader
 Hotel数据集： 50 epoch on CUDA
 """
 
-root_path = "F:\Dataset\HotalBySongbo\\"
-bert_vocab = "F:\Dataset\Bert-base-Chinese"
+root_path = "D:\新建文件夹\Dataset\HotalBySongbo\\"
+bert_path = "D:\新建文件夹\Dataset\Bert-base-Chinese"
 
-tokenizer = BertTokenizer.from_pretrained(bert_vocab)
+tokenizer = BertTokenizer.from_pretrained(bert_path)
 
 
 def to_npz(fileName):
@@ -23,6 +23,7 @@ def to_npz(fileName):
     contextList = []
     max_len = 100
     max_id = 0
+    contexts = []
 
     with open(txt_file, 'r', encoding="utf-8") as f:
         lines = f.readlines()
@@ -30,6 +31,7 @@ def to_npz(fileName):
             label, context = l.split("    ")
 
             context = context.replace("\n", "")
+
             token = tokenizer.tokenize(context)
             if len(token) != 0 and len(token) < max_len:
                 ids = tokenizer.convert_tokens_to_ids(token)
@@ -38,14 +40,19 @@ def to_npz(fileName):
                 if label == "-1":
                     label = "0"
                 labelList.append(int(label))
+                contexts.append(context)
 
+    maskList = []
     for i in range(len(contextList)):
+        maskList = [1] * len(contextList[i]) + [0] * (max_len - len(contextList[i]))
         contextList[i] += [0] * (max_len - len(contextList[i]))
 
     contextList = np.asarray(contextList)
     labelList = np.asarray(labelList)
-    np.savez(npz_file, contextList=contextList, labelList=labelList, max_id=max_id)
+    maskList = np.asarray(maskList)
+    np.savez(npz_file, contextList=contextList, labelList=labelList, maskList=maskList, max_id=max_id)
 
+    return contexts
 
 def read_npz(fileName):
     np.load.__defaults__ = (None, True, True, 'ASCII')
@@ -86,4 +93,38 @@ def get_data_info(batch_size):
     return train_iter, test_iter, int(data["max_id"])
 
 
-to_npz("all")
+class BertHotelDataset(Dataset):
+    def __init__(self, encodings, labels):
+        super(BertHotelDataset, self).__init__()
+        self.encodings = encodings
+        self.labels = torch.tensor(labels).long()
+
+    def __getitem__(self, index):
+        item = {key: torch.tensor(val[index]) for key, val in self.encodings.items()}
+        item['label'] = self.labels[index]
+        return item
+
+    def __len__(self):
+        return len(self.labels)
+
+def get_bert_data_info(batch_size):
+    contexts = to_npz("all")
+
+    all_data = read_npz("all")
+    all_labels = all_data["labelList"]
+
+    tokenizer = BertTokenizer.from_pretrained(bert_path)
+
+    train_contexts, test_contexts, train_labels, test_labels = train_test_split(contexts, all_labels, test_size=0.3, random_state=1)
+
+    train_encoding = tokenizer(train_contexts, truncation=True, padding=True, max_length=100)
+    test_encoding = tokenizer(test_contexts, truncation=True, padding=True, max_length=100)
+
+    train_dataset = BertHotelDataset(train_encoding, train_labels)
+    test_dataset = BertHotelDataset(test_encoding, test_labels)
+
+    train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+
+    test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    return train_iter, test_iter

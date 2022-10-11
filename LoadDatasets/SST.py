@@ -6,13 +6,13 @@ from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 
 """
-BiLSTM + Attention   5分类：35%
+BiLSTM + Attention   5分类：35%    3分类   49%
 """
 
-root_path = "F:\Dataset\SST\\"
-bert_vocab = "F:\Dataset\Bert-uncased"
+root_path = "D:\新建文件夹\Dataset\SST\\"
+bert_path = "D:\新建文件夹\Dataset\Bert-uncased"
 
-tokenizer = BertTokenizer.from_pretrained(bert_vocab)
+tokenizer = BertTokenizer.from_pretrained(bert_path)
 max_len = 100
 
 
@@ -49,6 +49,8 @@ def to_npz(fileName):
     max_id = np.asarray(max_id)
     np.savez(npz_file, contextList=contextList, labelList=labelList, max_id=max_id)
 
+    return inputs
+
 
 def read_npz(fileName):
     np.load.__defaults__ = (None, True, True, 'ASCII')
@@ -82,21 +84,55 @@ class SSTDataset(Dataset):
 
 
 def get_data_info(batch_size):
+    # to_npz("train")
+    # to_npz("test")
+
     train_data = read_npz("train")
     test_data = read_npz("test")
-    val_data = read_npz("val")
 
     train_dataset = SSTDataset(train_data)
     test_dataset = SSTDataset(test_data)
-    val_dataset = SSTDataset(val_data)
 
     train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-    test_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
-    val_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
 
-    return train_iter, test_iter, val_iter, int(max(train_data["max_id"], test_data["max_id"], val_data["max_id"]))
+    return train_iter, test_iter, int(max(train_data["max_id"], test_data["max_id"]))
 
 
-# to_npz("train")
-# to_npz("test")
+
 # to_npz("val")
+
+class BertSSTDataset(Dataset):
+    def __init__(self, encodings, labels):
+        super(BertSSTDataset, self).__init__()
+        self.encodings = encodings
+        self.labels = torch.tensor(labels).long()
+
+    def __getitem__(self, index):
+        item = {key: torch.tensor(val[index]) for key, val in self.encodings.items()}
+        item['label'] = self.labels[index]
+        return item
+
+    def __len__(self):
+        return len(self.labels)
+
+def get_bert_data_info(batch_size):
+    train_contexts = to_npz("train")
+    test_contexts = to_npz("test")
+
+    train_data = read_npz("train")
+    test_data = read_npz("test")
+
+    train_labels = train_data["labelList"]
+    test_labels = test_data["labelList"]
+
+    train_encoding = tokenizer(train_contexts, truncation=True, padding=True, max_length=100)
+    test_encoding = tokenizer(test_contexts, truncation=True, padding=True, max_length=100)
+
+    train_dataset = BertSSTDataset(train_encoding, train_labels)
+    test_dataset = BertSSTDataset(test_encoding, test_labels)
+
+    train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    return train_iter, test_iter

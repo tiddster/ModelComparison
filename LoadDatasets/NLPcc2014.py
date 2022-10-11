@@ -4,16 +4,16 @@ from transformers import BertTokenizer
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MinMaxScaler
 
-
 """
 BiLSTM+Attention   500 epoch on CUDA  
 """
 
-root_path = "F:\Dataset\\NLPCC2014_sentiment-master\\dataset\\"
-bert_path = "F:\Dataset\Bert-base-Chinese"
+root_path = "D:\新建文件夹\Dataset\\NLPCC2014_sentiment-master\dataset\\"
+bert_path = "D:\新建文件夹\Dataset\Bert-base-Chinese"
 
 tokenizers = BertTokenizer.from_pretrained(bert_path)
 max_len = 1010
+
 
 def to_npz(fileName):
     txt_file = root_path + fileName + '.txt'
@@ -23,7 +23,7 @@ def to_npz(fileName):
     with open(txt_file, 'r', encoding='utf-8') as f:
         data = f.readlines()
         for i in range(len(data)):
-            data[i] = data[i].replace("\n", "").replace("</review>","")
+            data[i] = data[i].replace("\n", "").replace("</review>", "")
             if data[i] == '':
                 continue
             lines.append(data[i])
@@ -65,6 +65,8 @@ def to_npz(fileName):
     labelList = np.asarray(labelList)
     max_id = np.asarray(max_id)
     np.savez(save_file, contextList=contextList, labelList=labelList, max_id=max_id)
+    return contexts
+
 
 def read_npz(fileName):
     np.load.__defaults__ = (None, True, True, 'ASCII')
@@ -72,6 +74,7 @@ def read_npz(fileName):
     np.load.__defaults__ = (None, False, True, 'ASCII')
     print(datas.files)
     return datas
+
 
 # to_npz("train")
 # to_npz("test")
@@ -108,3 +111,40 @@ def get_data_info(batch_size):
     train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
     test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
     return train_iter, test_iter, int(max(train_data["max_id"], test_data["max_id"]))
+
+
+class BertNLPDataset(Dataset):
+    def __init__(self, encodings, labels):
+        super(BertNLPDataset, self).__init__()
+        self.encodings = encodings
+        self.labels = torch.tensor(labels).long()
+
+    def __getitem__(self, index):
+        item = {key: torch.tensor(val[index]) for key, val in self.encodings.items()}
+        item['label'] = self.labels[index]
+        return item
+
+    def __len__(self):
+        return len(self.labels)
+
+
+def get_bert_data_info(batch_size):
+    train_contexts = to_npz("train")
+    test_contexts = to_npz("test")
+
+    train_data = read_npz("train")
+    test_data = read_npz("test")
+
+    tokenizer = BertTokenizer.from_pretrained(bert_path)
+
+    train_encoding = tokenizer(train_contexts, truncation=True, padding=True, max_length=100)
+    test_encoding = tokenizer(test_contexts, truncation=True, padding=True, max_length=100)
+
+    train_dataset = BertNLPDataset(train_encoding, train_data["labelList"])
+    test_dataset = BertNLPDataset(test_encoding, test_data["labelList"])
+
+    train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+    test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
+
+    return train_iter, test_iter
+
