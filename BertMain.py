@@ -7,7 +7,7 @@ from Models.ConfigUtils import Config
 from Models.Bert import BertModel
 
 def train():
-    for epoch in range(1000):
+    for epoch in range(12):
         train_total, train_acc_total, total_loss, start, batch_num = 0, 0, 0.0, time.time(), 0
         for batch in train_iter:
             input_ids = batch['input_ids'].to(device)
@@ -48,10 +48,10 @@ def train():
 if __name__ == "__main__":
     train_iter, test_iter = SST.get_bert_data_info(16)
 
-    config = Config(0, 3, hidden_size=768)
+    config = Config(0, 5, hidden_size=768)
 
     device = config.device
-    device = torch.cuda.set_device(0)
+
     config.bert_path = SST.bert_path
     net = BertModel(config).to(device)
 

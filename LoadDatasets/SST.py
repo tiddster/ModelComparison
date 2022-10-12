@@ -24,14 +24,8 @@ def to_npz(fileName):
     inputs = list(data["INPUT"])
     outputs = list(data["OUTPUT"])
 
-    labelList = []
-    for l in outputs:
-        if 1 <= l < 3:
-            labelList.append(0)
-        elif l == 3:
-            labelList.append(1)
-        else:
-            labelList.append(2)
+    labelList = outputs
+    print(labelList)
 
     contextList = []
     max_id = 0
