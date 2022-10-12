@@ -2,9 +2,9 @@ import time
 
 import torch
 
-import LoadDatasets.NLPcc2014 as NLP
+import LoadDatasets.Hotel as Hotel
 from Models.ConfigUtils import Config
-from Models.BiLSTM import BiLSTM
+from Models.BiLSTMAttention import BiLSTM
 
 def train(net, train_iter, test_iter):
     for epoch in range(1000):
@@ -46,13 +46,12 @@ def train(net, train_iter, test_iter):
 if __name__ == '__main__':
     print(torch.cuda.get_device_name())
 
-    train_iter, test_iter, vocab_size = NLP.get_data_info(128)
+    train_iter, test_iter, vocab_size = Hotel.get_data_info(128)
 
     print(f"进行数据集设置, 词向量大小为：{vocab_size}")
     config = Config(vocab_size, 2)
 
     net = BiLSTM(config).to(config.device)
-
     criterion = config.criterion
     optimizer = config.get_optimizer(net)
 

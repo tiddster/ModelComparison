@@ -7,7 +7,7 @@ class Config():
         self.n_class = n_class
         self.embedding_dim = embedding_dim
         self.hidden_size = hidden_size
-        self.lr = 0.0002
+        self.lr = 0.002
         self.dropout = 0.01
 
         self.device = torch.cuda.set_device(0)

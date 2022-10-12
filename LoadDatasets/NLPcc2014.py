@@ -12,7 +12,7 @@ root_path = "D:\新建文件夹\Dataset\\NLPCC2014_sentiment-master\dataset\\"
 bert_path = "D:\新建文件夹\Dataset\Bert-base-Chinese"
 
 tokenizers = BertTokenizer.from_pretrained(bert_path)
-max_len = 1010
+max_len = 100
 
 
 def to_npz(fileName):
@@ -58,7 +58,10 @@ def to_npz(fileName):
             contextList.append(ids)
 
     for i in range(len(contextList)):
-        contextList[i] += [0] * (max_len - len(contextList[i]))
+        if len(contextList[i]) < max_len:
+            contextList[i] += [0] * (max_len - len(contextList[i]))
+        else:
+            contextList[i] = contextList[i][:max_len]
         contextList[i] = np.asarray(contextList[i])
 
     contextList = np.asarray(contextList)
